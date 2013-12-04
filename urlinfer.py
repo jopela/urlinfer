@@ -39,7 +39,7 @@ def main():
 
     if args.test:
         import doctest
-        doctest.testmod()
+        doctest.testmod(verbose=True)
         exit(0)
 
     urls = args.urls.read().split()
@@ -109,13 +109,42 @@ def dbpedia(urls):
     >>> dbpedia(['http://en.wikipedia.org/wiki/S-expression'])
     ['http://en.wikipedia.org/wiki/S-expression']
 
-    """
+    # domain and path should only be replaced at the right position.
+    >>> dbpedia(['http://en.dbpedia.org/resource/resource'])
+    ['http://en.wikipedia.org/wiki/resource']
 
+    """
     res = []
     dbpedia_domain = "dbpedia"
+    wikipedia_domain ="wikipedia"
 
-    return []
+    def switch_domain(parsed):
+        new_netloc = parsed.netloc.replace(dbpedia_domain, wikipedia_domain)
+        path = parsed.path.split('/')
+        path[1] = 'wiki'
+        new_path = '/'.join(path)
 
+        new_url = urlunparse(
+                (parsed.scheme,
+                 new_netloc,
+                 new_path,
+                 parsed.params,
+                 parsed.query,
+                 parsed.fragment)
+                )
+
+        return new_url
+
+    for url in urls:
+        parsed = urlparse(url)
+        domain = parsed.netloc
+
+        if dbpedia_domain in domain:
+            res.append(switch_domain(parsed))
+        else:
+            res.append(url)
+
+    return res
 
 if __name__ == '__main__':
     main()

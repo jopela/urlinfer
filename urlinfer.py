@@ -50,8 +50,11 @@ def main():
     functions = args.inferfunc
 
     # turn the function name into function.
-    real_functions = [getattr(__name__, name) for name in functions]
+    real_functions = [getattr(sys.modules[__name__], name) for name in functions]
 
+    res = infer(urls, real_functions)
+    for url in res:
+        print(url)
     return
 
 def infer(urls, functions):

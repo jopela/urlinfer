@@ -4,6 +4,8 @@ import functional
 import argparse
 import sys
 
+from urllib.parse import urlparse, urlunparse
+
 def main():
 
     parser = argparse.ArgumentParser()
@@ -57,14 +59,24 @@ def wikivoyage(urls):
 
     # wikipedia urls should be 'casted' to wikivoyage urls.
     >>> wikivoyage(['http://en.wikipedia.org/wiki/Montreal'])
-    ['http://en.wikipedia.org/wiki/Montreal','http://en.wikivoyage.org/wiki/Montreal']
+    ['http://en.wikipedia.org/wiki/Montreal', 'http://en.wikivoyage.org/wiki/Montreal']
 
     # non wikipedia urls remain untouched.
     >>> wikivoyage(['http://db.org/resource/Montreal'])
     ['http://db.org/resource/Montreal']
     """
 
-    return []
+    res = []
+    wikipedia_domain = "wikipedia"
+    wikivoyage_domain = "wikivoyage"
+
+    for url in urls:
+        transformed = url.replace(wikipedia_domain, wikivoyage_domain)
+        res.append(url)
+        if transformed != url:
+            res.append(transformed)
+
+    return res
 
 
 def dbpedia(urls):

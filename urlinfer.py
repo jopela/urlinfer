@@ -21,7 +21,7 @@ def main():
             '-i',
             '--inferfunc',
             help='inference functions to apply',
-            choices = ('wikivoyage', 'language'),
+            choices = ('wikivoyage', 'dbpedia'),
             nargs='+'
             )
 
@@ -51,7 +51,7 @@ def wikivoyage(urls):
     Example
     =======
 
-    # empty list should returnt the empty list.
+    # empty list should return the empty list.
     >>> wikivoyage([])
     []
 
@@ -62,6 +62,30 @@ def wikivoyage(urls):
     # non wikipedia urls remain untouched.
     >>> wikivoyage(['http://db.org/resource/Montreal'])
     ['http://db.org/resource/Montreal']
+    """
+
+    return []
+
+
+def dbpedia(urls):
+    """ takes a list of urls and transform the dbpedia urls into
+    wikipedia urls.
+
+    Example
+    =======
+
+    # empty list should return the empty list.
+    >>> dbpedia([])
+    []
+
+    # dbpedia urls should be casted to wiki urls.
+    >>> dbpedia(['http://ru.dbpedia.org/resource/Россия'])
+    ['http://ru.wikipedia.org/wiki/Россия']
+
+    # non dbpedia urls remain untouched.
+    >>> dbpedia(['http://en.wikipedia.org/wiki/S-expression'])
+    ['http://en.wikipedia.org/wiki/S-expression']
+
     """
 
     return []

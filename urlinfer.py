@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 
-import functional
 import argparse
 import sys
+import functools
 
 from urllib.parse import urlparse, urlunparse
+from functional import compose, partial
+
+
+multi_compose = partial(functools.reduce, compose)
 
 def main():
 
@@ -39,13 +43,32 @@ def main():
 
     if args.test:
         import doctest
-        doctest.testmod(verbose=True)
+        doctest.testmod()
         exit(0)
 
     urls = args.urls.read().split()
     functions = args.inferfunc
 
+    # turn the function name into function.
+    real_functions = [getattr(__name__, name) for name in functions]
+
     return
+
+def infer(urls, functions):
+    """ takes a list of urls and apply the inference functions on them.
+
+    Example
+    =======
+
+    # composition of the dbpedia infer and wikivoyage infer
+    >>> infer(['http://ru.dbpedia.org/resource/russia','http://en.wikipedia.org/wiki/quebec'],[wikivoyage,dbpedia])
+    ['http://ru.wikipedia.org/wiki/russia', 'http://ru.wikivoyage.org/wiki/russia', 'http://en.wikipedia.org/wiki/quebec', 'http://en.wikivoyage.org/wiki/quebec']
+    """
+
+    composed = multi_compose(functions)
+    res = composed(urls)
+
+    return res
 
 def wikivoyage(urls):
     """ takes a list of urls and infers the wikivoyage urls from them.
@@ -145,6 +168,7 @@ def dbpedia(urls):
             res.append(url)
 
     return res
+
 
 if __name__ == '__main__':
     main()

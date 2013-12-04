@@ -64,20 +64,31 @@ def wikivoyage(urls):
     # non wikipedia urls remain untouched.
     >>> wikivoyage(['http://db.org/resource/Montreal'])
     ['http://db.org/resource/Montreal']
-    """
 
+    # wikipedia should only be replace in the netloc
+    >>> wikivoyage(['http://en.wikipedia.org/wiki/wikipedia'])
+    ['http://en.wikipedia.org/wiki/wikipedia', 'http://en.wikivoyage.org/wiki/wikipedia']
+
+    """
     res = []
     wikipedia_domain = "wikipedia"
     wikivoyage_domain = "wikivoyage"
 
     for url in urls:
-        transformed = url.replace(wikipedia_domain, wikivoyage_domain)
         res.append(url)
-        if transformed != url:
-            res.append(transformed)
+        parsed = urlparse(url)
+        if wikipedia_domain in parsed.netloc:
+            wikivoyage_url = urlunparse(
+                    (parsed.scheme,
+                     parsed.netloc.replace(wikipedia_domain, wikivoyage_domain),
+                     parsed.path,
+                     parsed.params,
+                     parsed.query,
+                     parsed.fragment)
+                    )
+            res.append(wikivoyage_url)
 
     return res
-
 
 def dbpedia(urls):
     """ takes a list of urls and transform the dbpedia urls into
@@ -99,6 +110,9 @@ def dbpedia(urls):
     ['http://en.wikipedia.org/wiki/S-expression']
 
     """
+
+    res = []
+    dbpedia_domain = "dbpedia"
 
     return []
 

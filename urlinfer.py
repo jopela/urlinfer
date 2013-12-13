@@ -7,7 +7,6 @@ import functools
 from urllib.parse import urlparse, urlunparse
 from functional import compose, partial
 
-
 multi_compose = partial(functools.reduce, compose)
 
 def main():
@@ -30,6 +29,15 @@ def main():
             choices = ('wikivoyage', 'dbpedia'),
             nargs='+'
             )
+
+    parser.add_argument(
+            '-l',
+            '--lang',
+            help='language prefix to use when infering from dbpedia resources'\
+                    '. Defaults to "en" when not specified.',
+            default = "en"
+            )
+
 
     parser.add_argument(
             '-t',
@@ -116,9 +124,9 @@ def wikivoyage(urls):
 
     return res
 
-def dbpedia(urls):
+def dbpedia(urls,lang='en'):
     """ takes a list of urls and transform the dbpedia urls into
-    wikipedia urls.
+    wikipedia urls with the given language prefix.
 
     Example
     =======
@@ -138,6 +146,11 @@ def dbpedia(urls):
     # domain and path should only be replaced at the right position.
     >>> dbpedia(['http://en.dbpedia.org/resource/resource'])
     ['http://en.wikipedia.org/wiki/resource']
+
+    # dbpedia resource with no language prefix in the url domain name must
+    # be translated into the default lang (en).
+    >>> dbpedia(['http://dbpedia.org/resource/Montreal'])
+    ['http://en.wikipedia.org/wiki/Montreal']
 
     """
     res = []
@@ -161,6 +174,8 @@ def dbpedia(urls):
 
         return new_url
 
+    urls = [assign_lang(url,lang) for url in urls]
+
     for url in urls:
         parsed = urlparse(url)
         domain = parsed.netloc
@@ -172,6 +187,37 @@ def dbpedia(urls):
 
     return res
 
+def assign_lang(url,lang):
+    """ assign a language to a dbpedia resource that does not have one.
+
+    EXAMPLE
+    =======
+
+    >>> assign_lang('http://dbpedia.org/resource/Montreal','en')
+    'http://en.dbpedia.org/resource/Montreal'
+
+    >>> assign_lang('http://fr.dbpedia.org/resource/Montreal','en')
+    'http://fr.dbpedia.org/resource/Montreal'
+    """
+
+    url_parsed = urlparse(url)
+
+    domain = url_parsed.netloc
+    domain_parts = domain.split(".")
+
+    if len(domain_parts) == 3:
+        return url
+    else:
+        new_netloc = ".".join([lang,domain])
+        new_url    = urlunparse(
+                       (url_parsed.scheme,
+                        new_netloc,
+                        url_parsed.path,
+                        url_parsed.params,
+                        url_parsed.query,
+                        url_parsed.fragment))
+
+        return new_url
 
 if __name__ == '__main__':
     main()

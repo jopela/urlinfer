@@ -3,6 +3,7 @@
 import argparse
 import sys
 import functools
+import wikipedia
 
 from urllib.parse import urlparse, urlunparse
 from functional import compose, partial
@@ -60,22 +61,35 @@ def main():
     # turn the function name into function.
     real_functions = [getattr(sys.modules[__name__], name) for name in functions]
 
-    res = infer(urls, real_functions)
+    res = urlinfer(urls, real_functions)
     for url in res:
         print(url)
     return
 
-def infer(urls, functions):
-    """ takes a list of urls and apply the inference functions on them.
+def urlinfer(urls,functions):
+    """
+    takes a list of urls and apply the urlinference functions on them.
 
     Example
     =======
 
     # composition of the dbpedia infer and wikivoyage infer
-    >>> infer(['http://ru.dbpedia.org/resource/russia','http://en.wikipedia.org/wiki/quebec'],[wikivoyage,dbpedia])
+    >>> urlinfer(['http://ru.dbpedia.org/resource/russia','http://en.wikipedia.org/wiki/quebec'],[wikivoyage,dbpedia])
     ['http://ru.wikipedia.org/wiki/russia', 'http://ru.wikivoyage.org/wiki/russia', 'http://en.wikipedia.org/wiki/quebec', 'http://en.wikivoyage.org/wiki/quebec']
+
     """
 
+    composed = multi_compose(functions)
+    res = composed(urls)
+
+    return res
+
+def urlinferdef(urls):
+    """
+    default urlinfer function with dbpedia and wikivoyage inf func.
+    """
+
+    functions = [wikivoyage,wikipedialang,dbpedia]
     composed = multi_compose(functions)
     res = composed(urls)
 
@@ -123,6 +137,50 @@ def wikivoyage(urls):
             res.append(wikivoyage_url)
 
     return res
+
+# I dont know if the order of the item in the list returned from
+# wikipedia.langlinks is deterministic. This might lead to test failure
+# in the future.
+def wikipedialang(urls, langs={"en","fr","pt",
+                               "it","es","ru",
+                               "ar","ja","zh",
+                               "ko","nl","pl"}):
+    """
+    infer all the wikipedia languages link that are in the langs set.
+
+    EXAMPLE
+    =======
+
+    >>> wikipedialang(['http://en.wikipedia.org/wiki/Montreal'],langs={'en','fr','ru'})
+    ['http://fr.wikipedia.org/wiki/Montr%C3%A9al', 'http://ru.wikipedia.org/wiki/%D0%9C%D0%BE%D0%BD%D1%80%D0%B5%D0%B0%D0%BB%D1%8C', 'http://en.wikipedia.org/wiki/Montreal']
+
+    """
+
+    res = []
+    for url in urls:
+        title = url_title(url)
+        res.extend(wikipedia.langlinks(title, langs))
+
+    return res
+
+
+def url_title(url):
+    """
+    Extract the title part of the url.
+
+    EXAMPLE
+    =======
+
+    >>> url_title('http://en.wikipedia.org/wiki/Quebec_City')
+    'Quebec_City'
+
+    """
+
+    url_parsed = urlparse(url)
+    path = url_parsed.path
+    path_component = path.split("/")
+    title = path_component[-1]
+    return title
 
 def dbpedia(urls,lang='en'):
     """ takes a list of urls and transform the dbpedia urls into

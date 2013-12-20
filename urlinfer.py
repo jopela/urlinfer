@@ -4,9 +4,12 @@ import argparse
 import sys
 import functools
 import wikipedia
+import requests
 
-from urllib.parse import urlparse, urlunparse
+from time import sleep
+from urllib.parse import urlparse, urlunparse, unquote
 from functional import compose, partial
+from filecache import filecache
 
 multi_compose = partial(functools.reduce, compose)
 
@@ -38,7 +41,6 @@ def main():
                     '. Defaults to "en" when not specified.',
             default = "en"
             )
-
 
     parser.add_argument(
             '-t',
@@ -105,7 +107,7 @@ def wikivoyage(urls):
     >>> wikivoyage([])
     []
 
-    # wikipedia urls should be 'casted' to wikivoyage urls.
+    # wikipedia urls should be 'casted' to wikivoyage urls and returned only when they resolve.
     >>> wikivoyage(['http://en.wikipedia.org/wiki/Montreal'])
     ['http://en.wikipedia.org/wiki/Montreal', 'http://en.wikivoyage.org/wiki/Montreal']
 
@@ -113,7 +115,7 @@ def wikivoyage(urls):
     >>> wikivoyage(['http://db.org/resource/Montreal'])
     ['http://db.org/resource/Montreal']
 
-    # wikipedia should only be replace in the netloc
+    # wikipedia should only be replace in the netloc.
     >>> wikivoyage(['http://en.wikipedia.org/wiki/wikipedia'])
     ['http://en.wikipedia.org/wiki/wikipedia', 'http://en.wikivoyage.org/wiki/wikipedia']
 
@@ -137,6 +139,15 @@ def wikivoyage(urls):
             res.append(wikivoyage_url)
 
     return res
+
+def url_resolvable(url):
+    """
+    returns true if a request to that url returns an HTTP status code in the
+    range 2xx.
+    """
+    r = requests.head(url)
+    sleep(0.1)
+    return r.status_code == requests.codes.ok
 
 # I dont know if the order of the item in the list returned from
 # wikipedia.langlinks is deterministic. This might lead to test failure
@@ -163,7 +174,6 @@ def wikipedialang(urls, langs={"en","fr","pt",
 
     return res
 
-
 def url_title(url):
     """
     Extract the title part of the url.
@@ -174,12 +184,14 @@ def url_title(url):
     >>> url_title('http://en.wikipedia.org/wiki/Quebec_City')
     'Quebec_City'
 
-    """
+    >>> url_title('http://en.wikipedia.org/wiki/%C5%8Cizumi,_Gunma')
+    'Ōizumi,_Gunma'
 
+    """
     url_parsed = urlparse(url)
     path = url_parsed.path
     path_component = path.split("/")
-    title = path_component[-1]
+    title = unquote(path_component[-1])
     return title
 
 def dbpedia(urls,lang='en'):

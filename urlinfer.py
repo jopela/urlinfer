@@ -155,7 +155,8 @@ def url_resolvable(url):
 def wikipedialang(urls, langs={"en","fr","pt",
                                "it","es","ru",
                                "ar","ja","zh",
-                               "ko","nl","pl"}):
+                               "ko","nl","pl",
+                               "de"}):
     """
     infer all the wikipedia languages link that are in the langs set.
 

@@ -97,6 +97,18 @@ def urlinferdef(urls):
 
     return res
 
+def urlinferwiki(urls):
+    """
+    only infers the wikivoyage and the wikipedia urls from the dbpedia
+    resources.
+    """
+
+    functions = [wikivoyage, dbpedia]
+    composed = multi_compose(functions)
+    res = composed(urls)
+
+    return res
+
 def wikivoyage(urls):
     """ takes a list of urls and infers the wikivoyage urls from them.
 
